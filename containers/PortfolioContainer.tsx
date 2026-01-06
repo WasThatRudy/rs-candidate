@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useThemeStore } from '@/stores/themeStore';
 import { ThemeToggle } from '@/components/atoms/ThemeToggle';
-import { ProfileSidebar } from '@/components/organisms/ProfileSidebar';
-import { IntroSection } from '@/components/organisms/IntroSection';
+import { GlobalEditToggle } from '@/components/atoms/GlobalEditToggle';
+import { EditableProfileSidebar } from '@/components/organisms/EditableProfileSidebar';
+import { EditableIntroSection } from '@/components/organisms/EditableIntroSection';
 import { TabNavigation } from '@/components/organisms/TabNavigation';
-import { InterviewCard } from '@/components/molecules/InterviewCard';
+import { EditableInterviewCard } from '@/components/molecules/EditableInterviewCard';
 import { TechnicalRatingPanel } from '@/components/organisms/TechnicalRatingPanel';
-import { PortfolioContent } from '@/components/organisms/PortfolioContent';
+import { EditablePortfolioContent } from '@/components/organisms/EditablePortfolioContent';
 import { socialIcons } from '@/lib/socialIcons';
 import type { Interview, Experience } from '@/types';
 
@@ -206,6 +207,30 @@ export function PortfolioContainer() {
     null
   );
 
+  // Global edit mode state
+  const [isEditMode, setIsEditMode] = useState(false);
+
+  // Editable data states
+  const [profileData, setProfileData] = useState({
+    timezone: 'Asia/Kolkata',
+    languages: ['English', 'Hindi'],
+  });
+
+  const [introData, setIntroData] = useState({
+    name: 'Shivansh Pandey',
+    title: 'Brand, UI/UX, and Graphic Designer',
+    about: "I'm a designer who crafts brands from the ground up — from logos and visual identity to websites and digital experiences. I blend design thinking, creativity, and technology to create intuitive, memorable user experiences.",
+  });
+
+  const [interviewsData, setInterviewsData] = useState<Interview[]>(interviews);
+  const [experiencesData, setExperiencesData] = useState<Experience[]>(experiences);
+
+  // Backup states for cancel functionality
+  const [backupProfileData, setBackupProfileData] = useState(profileData);
+  const [backupIntroData, setBackupIntroData] = useState(introData);
+  const [backupInterviewsData, setBackupInterviewsData] = useState<Interview[]>(interviews);
+  const [backupExperiencesData, setBackupExperiencesData] = useState<Experience[]>(experiences);
+
   // Apply theme on mount
   useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -216,19 +241,52 @@ export function PortfolioContainer() {
   }, []);
 
   const selectedInterviewData =
-    selectedInterview !== null ? interviews[selectedInterview] : null;
+    selectedInterview !== null ? interviewsData[selectedInterview] : null;
+
+  // Global edit mode handlers
+  const handleToggleEditMode = () => {
+    if (!isEditMode) {
+      // Entering edit mode - backup all data
+      setBackupProfileData(profileData);
+      setBackupIntroData(introData);
+      setBackupInterviewsData([...interviewsData]);
+      setBackupExperiencesData([...experiencesData]);
+    }
+    setIsEditMode(!isEditMode);
+  };
+
+  const handleSaveAll = () => {
+    // Save all changes (they're already in state)
+    setIsEditMode(false);
+    // Here you could add API call to persist changes
+  };
+
+  const handleCancelAll = () => {
+    // Revert all changes
+    setProfileData(backupProfileData);
+    setIntroData(backupIntroData);
+    setInterviewsData(backupInterviewsData);
+    setExperiencesData(backupExperiencesData);
+    setIsEditMode(false);
+  };
 
   return (
     <div className="min-h-screen w-full transition-colors duration-300 bg-background">
+      <GlobalEditToggle
+        isEditMode={isEditMode}
+        onToggleEdit={handleToggleEditMode}
+        onSave={handleSaveAll}
+        onCancel={handleCancelAll}
+      />
       <ThemeToggle theme={theme} onToggle={toggleTheme} />
 
       <div className="flex flex-row justify-center w-full">
         <div className="content-stretch flex gap-[85px] items-start justify-center overflow-clip pb-[93px] pt-[58px] px-[35px] max-w-[1400px] w-full">
           {/* Left Sidebar */}
-          <ProfileSidebar
+          <EditableProfileSidebar
             profileImage="/placeholder-profile.jpg"
-            timezone="Asia/Kolkata"
-            languages={['English', 'Hindi']}
+            timezone={profileData.timezone}
+            languages={profileData.languages}
             socialLinks={[
               {
                 platform: 'Behance',
@@ -256,14 +314,25 @@ export function PortfolioContainer() {
                 href: 'mailto:example@email.com',
               },
             ]}
+            isEditing={isEditMode}
+            onTimezoneChange={(timezone) =>
+              setProfileData({ ...profileData, timezone })
+            }
+            onLanguagesChange={(languages) =>
+              setProfileData({ ...profileData, languages })
+            }
           />
 
           {/* Main Content */}
           <div className="content-stretch flex flex-col gap-[38px] items-start relative shrink-0 w-[640px]">
-            <IntroSection
-              name="Shivansh Pandey"
-              title="Brand, UI/UX, and Graphic Designer"
-              about="I'm a designer who crafts brands from the ground up — from logos and visual identity to websites and digital experiences. I blend design thinking, creativity, and technology to create intuitive, memorable user experiences."
+            <EditableIntroSection
+              name={introData.name}
+              title={introData.title}
+              about={introData.about}
+              onNameChange={(name) => setIntroData({ ...introData, name })}
+              onTitleChange={(title) => setIntroData({ ...introData, title })}
+              onAboutChange={(about) => setIntroData({ ...introData, about })}
+              isEditing={isEditMode}
             />
 
             <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
@@ -271,11 +340,17 @@ export function PortfolioContainer() {
             {/* Tab Content */}
             {activeTab === 'interviews' ? (
               <div className="content-stretch flex flex-col gap-[16px] items-start relative shrink-0 w-full">
-                {interviews.map((interview, idx) => (
-                  <InterviewCard
+                {interviewsData.map((interview, idx) => (
+                  <EditableInterviewCard
                     key={idx}
                     interview={interview}
-                    onViewDetails={() => setSelectedInterview(idx)}
+                    onViewDetails={() => !isEditMode && setSelectedInterview(idx)}
+                    onInterviewChange={(updatedInterview) => {
+                      const newInterviews = [...interviewsData];
+                      newInterviews[idx] = updatedInterview;
+                      setInterviewsData(newInterviews);
+                    }}
+                    isEditing={isEditMode}
                   />
                 ))}
 
@@ -288,9 +363,11 @@ export function PortfolioContainer() {
                 )}
               </div>
             ) : (
-              <PortfolioContent
-                experiences={experiences}
+              <EditablePortfolioContent
+                experiences={experiencesData}
                 brandDesignImages={[]}
+                isEditing={isEditMode}
+                onExperiencesChange={setExperiencesData}
               />
             )}
           </div>
