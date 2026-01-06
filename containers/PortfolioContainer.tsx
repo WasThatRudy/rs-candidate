@@ -280,78 +280,87 @@ export function PortfolioContainer() {
       />
       <ThemeToggle theme={theme} onToggle={toggleTheme} />
 
-      <div className="flex flex-row justify-center w-full">
-        <div className="content-stretch flex gap-[85px] items-start justify-center overflow-clip pb-[93px] pt-[58px] max-w-[1400px] w-full">
-          {/* Left Sidebar */}
-          <EditableProfileSidebar
-            profileImage="/placeholder-profile.jpg"
-            timezone={profileData.timezone}
-            languages={profileData.languages}
-            socialLinks={[
-              {
-                platform: 'Behance',
-                icon: socialIcons.Behance,
-                href: '#',
-              },
-              {
-                platform: 'LinkedIn',
-                icon: socialIcons.LinkedIn,
-                href: '#',
-              },
-              {
-                platform: 'Instagram',
-                icon: socialIcons.Instagram,
-                href: '#',
-              },
-              {
-                platform: 'X',
-                icon: socialIcons.X,
-                href: '#',
-              },
-              {
-                platform: 'Email',
-                icon: socialIcons.Email,
-                href: 'mailto:example@email.com',
-              },
-            ]}
-            isEditing={isEditMode}
-            onTimezoneChange={(timezone) =>
-              setProfileData({ ...profileData, timezone })
-            }
-            onLanguagesChange={(languages) =>
-              setProfileData({ ...profileData, languages })
-            }
-          />
-
-          {/* Main Content */}
-          <div className="content-stretch flex flex-col gap-[38px] items-start relative shrink-0 w-[640px]">
-            <EditableIntroSection
-              name={introData.name}
-              title={introData.title}
-              about={introData.about}
-              onNameChange={(name) => setIntroData({ ...introData, name })}
-              onTitleChange={(title) => setIntroData({ ...introData, title })}
-              onAboutChange={(about) => setIntroData({ ...introData, about })}
+      <div className="flex flex-col w-full">
+        {/* Constrained Section: Sidebar and Intro */}
+        <div className="flex flex-row justify-center w-full">
+          <div className="content-stretch flex gap-[85px] items-start justify-center overflow-clip pt-[58px] px-[35px] max-w-[1400px] w-full">
+            {/* Left Sidebar */}
+            <EditableProfileSidebar
+              profileImage="/placeholder-profile.jpg"
+              timezone={profileData.timezone}
+              languages={profileData.languages}
+              socialLinks={[
+                {
+                  platform: 'Behance',
+                  icon: socialIcons.Behance,
+                  href: '#',
+                },
+                {
+                  platform: 'LinkedIn',
+                  icon: socialIcons.LinkedIn,
+                  href: '#',
+                },
+                {
+                  platform: 'Instagram',
+                  icon: socialIcons.Instagram,
+                  href: '#',
+                },
+                {
+                  platform: 'X',
+                  icon: socialIcons.X,
+                  href: '#',
+                },
+                {
+                  platform: 'Email',
+                  icon: socialIcons.Email,
+                  href: 'mailto:example@email.com',
+                },
+              ]}
               isEditing={isEditMode}
+              onTimezoneChange={(timezone) =>
+                setProfileData({ ...profileData, timezone })
+              }
+              onLanguagesChange={(languages) =>
+                setProfileData({ ...profileData, languages })
+              }
             />
 
-            <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+            {/* Intro Section */}
+            <div className="content-stretch flex flex-col gap-[38px] items-start relative shrink-0 w-[640px]">
+              <EditableIntroSection
+                name={introData.name}
+                title={introData.title}
+                about={introData.about}
+                onNameChange={(name) => setIntroData({ ...introData, name })}
+                onTitleChange={(title) => setIntroData({ ...introData, title })}
+                onAboutChange={(about) => setIntroData({ ...introData, about })}
+                isEditing={isEditMode}
+              />
+            </div>
+          </div>
+        </div>
 
-            {/* Tab Content */}
+        {/* Full Width Section: Tab Navigation and Content */}
+        <div className="w-full pb-[93px] mt-[38px] px-[35px]">
+          <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+
+          {/* Tab Content - Full Width */}
+          <div className="mt-[38px]">
             {activeTab === 'interviews' ? (
-              <div className="content-stretch flex flex-col gap-[16px] items-start relative shrink-0 w-full">
+              <div className="flex flex-col gap-[16px] items-center relative shrink-0 w-full">
                 {interviewsData.map((interview, idx) => (
-                  <EditableInterviewCard
-                    key={idx}
-                    interview={interview}
-                    onViewDetails={() => !isEditMode && setSelectedInterview(idx)}
-                    onInterviewChange={(updatedInterview) => {
-                      const newInterviews = [...interviewsData];
-                      newInterviews[idx] = updatedInterview;
-                      setInterviewsData(newInterviews);
-                    }}
-                    isEditing={isEditMode}
-                  />
+                  <div key={idx} className="w-full max-w-[1200px]">
+                    <EditableInterviewCard
+                      interview={interview}
+                      onViewDetails={() => !isEditMode && setSelectedInterview(idx)}
+                      onInterviewChange={(updatedInterview) => {
+                        const newInterviews = [...interviewsData];
+                        newInterviews[idx] = updatedInterview;
+                        setInterviewsData(newInterviews);
+                      }}
+                      isEditing={isEditMode}
+                    />
+                  </div>
                 ))}
 
                 {selectedInterviewData && (
