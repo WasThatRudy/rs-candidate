@@ -1,0 +1,256 @@
+# Frontend Best Practices & Architecture Guidelines
+
+## Component Architecture & Hierarchy
+
+### UI Component Levels
+
+1. **Containers** (`/containers` or `/components/containers`)
+   - **ALL business logic MUST be in containers**
+   - Handle data fetching, state management, side effects
+   - Connect to Zustand stores, API calls, and data transformations
+   - Containers are the ONLY place where hooks like `useState`, `useEffect`, `useQuery`, etc. should be used
+   - Containers pass down data and callbacks as props to presentational components
+   - Example: `UserProfileContainer`, `DashboardContainer`, `ProductListContainer`
+
+2. **Presentational Components** (`/components`)
+   - **NO business logic, NO hooks (except UI hooks like `useState` for local UI state)**
+   - Pure UI components that receive props and render
+   - Can use UI-only hooks like `useState` for local UI state (e.g., dropdown open/close, form input values)
+   - Should be easily testable and reusable
+   - Example: `Button`, `Card`, `Input`, `Modal`, `UserCard`
+
+3. **Atomic Components** (`/components/atoms`, `/components/molecules`, `/components/organisms` - if using atomic design)
+   - **ZERO logic, pure UI only**
+   - Smallest reusable UI pieces
+   - No API calls, no state management, no side effects
+   - Only accept props and render
+
+### Rules:
+- ❌ NEVER put business logic in presentational/atomic components
+- ✅ ALL data fetching, API calls, and state management in containers
+- ✅ Containers compose presentational components
+- ✅ Presentational components are pure and testable
+
+## State Management with Zustand
+
+### Store Organization
+- Use Zustand for global state management (auth, user preferences, etc.)
+- Store files should be in `/stores` directory
+- Each domain should have its own store (e.g., `authStore`, `userStore`, `themeStore`)
+
+### Auth Store Best Practices
+- Store authentication state, user data, and tokens
+- Implement token expiration checking
+- **Token fetching/refetching rules:**
+  - ✅ Only fetch token if it doesn't exist
+  - ✅ Only refetch token if it's expired or about to expire (check expiration time)
+  - ✅ Never refetch token unnecessarily
+  - ✅ Implement token refresh logic that checks expiration before making API calls
+  - ✅ Store token expiration timestamp and validate before use
+
+### Example Store Structure:
+```typescript
+// stores/authStore.ts
+interface AuthStore {
+  token: string | null;
+  tokenExpiry: number | null;
+  user: User | null;
+  isAuthenticated: boolean;
+  login: (credentials: LoginCredentials) => Promise<void>;
+  logout: () => void;
+  refreshTokenIfNeeded: () => Promise<void>;
+  checkTokenExpiry: () => boolean;
+}
+```
+
+### State Management Rules:
+- ❌ NEVER use React Context for global state (use Zustand instead)
+- ❌ NEVER refetch data unnecessarily - use Zustand store as source of truth
+- ✅ Use Zustand selectors to prevent unnecessary re-renders
+- ✅ Keep stores focused and single-responsibility
+- ✅ Use middleware for persistence, logging, etc.
+
+## API & Data Fetching
+
+### API Client
+- Create a centralized API client (`/lib/api` or `/services/api`)
+- Implement request/response interceptors for:
+  - Adding auth tokens to headers
+  - Handling token refresh on 401 responses
+  - Error handling and transformation
+
+### Data Fetching Rules:
+- ✅ All API calls should be made from containers or custom hooks used by containers
+- ✅ Use React Query/TanStack Query for server state if needed, but coordinate with Zustand for client state
+- ✅ Implement proper error handling and loading states
+- ✅ Use TypeScript types for all API responses
+- ✅ Implement request cancellation for cleanup
+
+## TypeScript Best Practices
+
+- ✅ Use strict TypeScript configuration
+- ✅ Define types/interfaces for all props, API responses, and store state
+- ✅ Avoid `any` type - use `unknown` if type is truly unknown
+- ✅ Use type guards for runtime type checking
+- ✅ Export types from a centralized `/types` directory
+
+## Performance Best Practices
+
+- ✅ Use React.memo for expensive presentational components
+- ✅ Use useMemo and useCallback appropriately (but not excessively)
+- ✅ Implement code splitting with Next.js dynamic imports
+- ✅ Optimize images with Next.js Image component
+- ✅ Lazy load components that are not immediately visible
+- ✅ Implement proper loading states and skeleton screens
+- ✅ Avoid unnecessary re-renders by using Zustand selectors
+
+## Error Handling
+
+- ✅ Implement error boundaries for graceful error handling
+- ✅ Create a centralized error handling utility
+- ✅ Display user-friendly error messages
+- ✅ Log errors appropriately (development vs production)
+- ✅ Handle network errors, API errors, and validation errors separately
+
+## Code Organization
+
+### Directory Structure:
+```
+/app                    # Next.js app directory
+/components            # Presentational components
+  /atoms              # Smallest UI components
+  /molecules          # Composed components
+  /organisms          # Complex UI sections
+/containers            # Container components with logic
+/stores                # Zustand stores
+/lib                   # Utilities, helpers, API client
+/types                 # TypeScript type definitions
+/hooks                 # Custom hooks (used by containers only)
+/services              # Business logic services
+/utils                 # Pure utility functions
+```
+
+### File Naming:
+- ✅ Use PascalCase for components: `UserProfile.tsx`
+- ✅ Use camelCase for utilities: `formatDate.ts`
+- ✅ Use camelCase for stores: `authStore.ts`
+- ✅ Use kebab-case for pages/routes (Next.js convention)
+
+## CSS & Styling Best Practices
+
+### Color Management
+- ✅ **ALL colors MUST be defined as CSS variables in `app/globals.css`**
+- ✅ **ALWAYS use existing CSS variables if they are already defined**
+- ✅ Never use hardcoded color values (hex, rgb, hsl) directly in components
+- ✅ Define colors in the `:root` selector for global access
+- ✅ Support dark mode by defining color variables for both light and dark themes
+- ✅ Use semantic color names (e.g., `--color-primary`, `--color-error`, `--color-success`) rather than specific color names (e.g., `--color-blue`)
+- ✅ Group related color variables together (backgrounds, text, borders, etc.)
+
+### CSS Variable Naming Convention:
+```css
+/* app/globals.css */
+:root {
+  /* Background colors */
+  --color-background: #ffffff;
+  --color-background-secondary: #f5f5f5;
+  
+  /* Text colors */
+  --color-text-primary: #171717;
+  --color-text-secondary: #666666;
+  
+  /* Brand colors */
+  --color-primary: #0070f3;
+  --color-primary-hover: #0051cc;
+  
+  /* Semantic colors */
+  --color-error: #e00;
+  --color-success: #00a854;
+  --color-warning: #ffa500;
+}
+```
+
+### Usage Rules:
+- ❌ NEVER write: `className="bg-blue-500"` or `style={{ color: '#0070f3' }}`
+- ✅ ALWAYS write: `className="bg-primary"` (using Tailwind with CSS variables) or `style={{ color: 'var(--color-primary)' }}`
+- ✅ Check `app/globals.css` first before creating new color variables
+- ✅ If a color variable doesn't exist, add it to `app/globals.css` first, then use it
+- ✅ Use Tailwind's theme configuration to map CSS variables to Tailwind classes when possible
+
+### Tailwind CSS Integration:
+- ✅ Configure Tailwind to use CSS variables from `globals.css`
+- ✅ Extend Tailwind theme with custom CSS variables
+- ✅ Use Tailwind classes that reference CSS variables (e.g., `bg-background`, `text-foreground`)
+
+## Testing Best Practices
+
+- ✅ Write unit tests for utilities and pure functions
+- ✅ Write component tests for presentational components (testing props and rendering)
+- ✅ Write integration tests for containers
+- ✅ Mock API calls and Zustand stores in tests
+- ✅ Use React Testing Library for component tests
+
+## Accessibility (a11y)
+
+- ✅ Use semantic HTML elements
+- ✅ Add proper ARIA labels where needed
+- ✅ Ensure keyboard navigation works
+- ✅ Maintain proper focus management
+- ✅ Test with screen readers
+- ✅ Ensure color contrast meets WCAG standards
+
+## Security Best Practices
+
+- ✅ Never expose sensitive data in client-side code
+- ✅ Validate and sanitize user inputs
+- ✅ Use HTTPS for all API calls
+- ✅ Implement proper CORS policies
+- ✅ Store tokens securely (httpOnly cookies preferred, or secure localStorage)
+- ✅ Implement CSRF protection where needed
+- ✅ Sanitize data before rendering to prevent XSS
+
+## Next.js Specific Best Practices
+
+- ✅ Use Server Components by default, Client Components only when needed
+- ✅ Use proper Next.js data fetching methods (fetch, Server Actions)
+- ✅ Implement proper metadata for SEO
+- ✅ Use Next.js Image component for optimized images
+- ✅ Leverage Next.js caching strategies appropriately
+- ✅ Use middleware for authentication checks when possible
+
+## Code Quality
+
+- ✅ Follow ESLint rules strictly
+- ✅ Use Prettier for consistent code formatting
+- ✅ Write self-documenting code with clear variable/function names
+- ✅ Add comments only when logic is complex or non-obvious
+- ✅ Keep functions small and focused (single responsibility)
+- ✅ Avoid deep nesting (max 3-4 levels)
+- ✅ Extract magic numbers and strings into constants
+
+## Git & Version Control
+
+- ✅ Write clear, descriptive commit messages
+- ✅ Keep commits atomic and focused
+- ✅ Use meaningful branch names
+- ✅ Review code before merging
+
+## General Principles
+
+1. **Separation of Concerns**: Logic in containers, UI in components
+2. **Single Source of Truth**: Zustand stores for global state
+3. **Don't Repeat Yourself (DRY)**: Extract reusable logic into hooks/utilities
+4. **Keep It Simple**: Prefer simple solutions over complex ones
+5. **Performance First**: Consider performance implications of every decision
+6. **User Experience**: Always prioritize user experience
+7. **Type Safety**: Leverage TypeScript to catch errors at compile time
+8. **Maintainability**: Write code that's easy to understand and modify
+
+## When in Doubt
+
+- ✅ Ask: "Does this component need logic? If yes, it should be a container."
+- ✅ Ask: "Is this state shared across multiple components? If yes, use Zustand."
+- ✅ Ask: "Can I test this component easily? If no, refactor."
+- ✅ Ask: "Is this the simplest solution? If no, simplify."
+
+
