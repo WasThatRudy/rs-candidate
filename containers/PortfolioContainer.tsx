@@ -281,7 +281,7 @@ export function PortfolioContainer() {
       <ThemeToggle theme={theme} onToggle={toggleTheme} />
 
       <div className="flex flex-row justify-center w-full">
-        <div className="content-stretch flex gap-[85px] items-start justify-center overflow-clip pb-[93px] pt-[58px] px-[35px] max-w-[1400px] w-full">
+        <div className="content-stretch flex gap-[85px] items-start justify-center overflow-clip pb-[93px] pt-[58px] max-w-[1400px] w-full">
           {/* Left Sidebar */}
           <EditableProfileSidebar
             profileImage="/placeholder-profile.jpg"
